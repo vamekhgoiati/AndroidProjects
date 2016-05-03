@@ -7,10 +7,13 @@ import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int BUFFER_SIZE_IN_BYTES = 2048;
     private static final int BUFFER_SIZE_IN_SHORT = 1024;
@@ -20,26 +23,21 @@ public class MainActivity extends AppCompatActivity {
     private static final int OUT_CHANNEL = AudioFormat.CHANNEL_OUT_MONO;
     private static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
-    private short[] buffer;
+    private byte[] buffer;
 
     private Button startButton;
     private Button stopButton;
     private boolean isRecording;
     private AudioTrack audioTrack;
     private AudioRecord audioRecord;
+    private int recordBufferSize;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        buffer = new short[BUFFER_SIZE_IN_SHORT];
-
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, RATE, IN_CHANNEL, ENCODING, BUFFER_SIZE_IN_BYTES);
-        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, RATE, OUT_CHANNEL, ENCODING, BUFFER_SIZE_IN_BYTES, AudioTrack.MODE_STREAM);
-
-        audioRecord.startRecording();
-        audioTrack.play();
+        Log.i(TAG, "Got min buffer size: " + recordBufferSize);
 
         startButton = (Button) findViewById(R.id.start_button);
         stopButton = (Button) findViewById(R.id.stop_button);
@@ -52,10 +50,14 @@ public class MainActivity extends AppCompatActivity {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            while (isRecording) {
-                                audioRecord.read(buffer, 0, BUFFER_SIZE_IN_SHORT);
-                                audioTrack.write(buffer, 0, BUFFER_SIZE_IN_SHORT);
-                            }
+
+                            recordBufferSize = AudioRecord.getMinBufferSize(RATE, IN_CHANNEL, ENCODING);
+                            buffer = new byte[recordBufferSize];
+
+                            audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, RATE, IN_CHANNEL, ENCODING, recordBufferSize);
+                            audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, RATE, OUT_CHANNEL, ENCODING, recordBufferSize, AudioTrack.MODE_STREAM);
+
+                            routeSound();
                         }
                     }).start();
                 }
@@ -66,8 +68,24 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 isRecording = false;
+                audioRecord.release();
             }
         });
 
+    }
+
+    private void routeSound() {
+        if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
+            audioRecord.startRecording();
+            audioTrack.play();
+
+            while (isRecording) {
+                audioRecord.read(buffer, 0, recordBufferSize);
+                audioTrack.write(buffer, 0, recordBufferSize);
+            }
+        } else {
+            Log.i(TAG, "Could not initialize AudioRecord object");
+            finish();
+        }
     }
 }
