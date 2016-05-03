@@ -15,9 +15,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private static final int BUFFER_SIZE_IN_BYTES = 2048;
-    private static final int BUFFER_SIZE_IN_SHORT = 1024;
-
     private static final int RATE = 44100;
     private static final int IN_CHANNEL = AudioFormat.CHANNEL_IN_MONO;
     private static final int OUT_CHANNEL = AudioFormat.CHANNEL_OUT_MONO;
@@ -42,11 +39,15 @@ public class MainActivity extends AppCompatActivity {
         startButton = (Button) findViewById(R.id.start_button);
         stopButton = (Button) findViewById(R.id.stop_button);
 
+        stopButton.setEnabled(false);
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!isRecording) {
                     isRecording = true;
+                    stopButton.setEnabled(isRecording);
+                    startButton.setEnabled(!isRecording);
+
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -68,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 isRecording = false;
+                stopButton.setEnabled(isRecording);
+                startButton.setEnabled(!isRecording);
                 audioRecord.release();
             }
         });
