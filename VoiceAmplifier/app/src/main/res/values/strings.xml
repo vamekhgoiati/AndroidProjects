@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">VoiceAmplifier</string>
-    <string name="start_button_text">Start</string>
+    <string name="start_byte_buffer_button_text">Start (Byte Buffer)</string>
+    <string name="start_short_buffer_button_text">Start (Short Buffer)</string>
+    <string name="start_short_buffer_gain1_button_text">Start (Short Buffer - Gain 1)</string>
+    <string name="start_short_buffer_gain2_button_text">Start (Short Buffer - Gain 2)</string>
     <string name="stop_button_text">Stop</string>
 </resources>
