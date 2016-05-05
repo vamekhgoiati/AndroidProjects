@@ -19,10 +19,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int IN_CHANNEL = AudioFormat.CHANNEL_IN_MONO;
     private static final int OUT_CHANNEL = AudioFormat.CHANNEL_OUT_MONO;
     private static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    private static final int BITS_PER_SAMPLE = 16;
-    private static final int BYTES_PER_SAMPLE = BITS_PER_SAMPLE / 8;
-    private static final int EMPTY_SPACE = 64 - BITS_PER_SAMPLE;
-
 
     private float gain = 1.0f;
 
