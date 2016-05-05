@@ -27,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private float gain = 1.0f;
 
     private Button startByteBufferButton;
+    private Button startByteBufferGainButton;
     private Button startShortBufferButton;
     private Button startShortBufferGain1Button;
     private Button startShortBufferGain2Button;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         startByteBufferButton = (Button) findViewById(R.id.start_byte_buffer_button);
+        startByteBufferGainButton = (Button) findViewById(R.id.start_byte_buffer_gain_button);
         startShortBufferButton = (Button) findViewById(R.id.start_short_buffer_button);
         startShortBufferGain1Button = (Button) findViewById(R.id.start_short_buffer_gain1_button);
         startShortBufferGain2Button = (Button) findViewById(R.id.start_short_buffer_gain2_button);
@@ -66,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
         };
 
         startByteBufferButton.setOnClickListener(listener);
+        startByteBufferGainButton.setOnClickListener(listener);
         startShortBufferButton.setOnClickListener(listener);
         startShortBufferGain1Button.setOnClickListener(listener);
         startShortBufferGain2Button.setOnClickListener(listener);
@@ -75,8 +78,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 isRecording = false;
                 setButtonsEnabled(isRecording);
-                audioRecord.release();
-                audioTrack.release();
+                releaseAudioResources();
             }
         });
 
@@ -103,6 +105,21 @@ public class MainActivity extends AppCompatActivity {
 
             while (isRecording) {
                 audioRecord.read(buffer, 0, bufferSize);
+
+                if (gain != 1) {
+
+                    for (int offset = 0; offset < bufferSize; offset += 2) {
+                        double sample = ((buffer[offset] & 0xff) | (buffer[offset + 1] << 8));
+
+                        sample = sample / 32768.0;
+                        sample = sample * gain;
+
+                        int nsample = (int) Math.round(sample * 32767.0);
+                        buffer[offset] = (byte) (nsample & 0xff);
+                        buffer[offset + 1] = (byte) ((nsample >> 8) & 0xff);
+                    }
+                }
+
                 audioTrack.write(buffer, 0, bufferSize);
             }
 
@@ -115,9 +132,15 @@ public class MainActivity extends AppCompatActivity {
     private void createBufferThreadAndStart(int id) {
         switch (id) {
             case R.id.start_byte_buffer_button:
+                gain = 1.0f;
+                createByteBufferThread().start();
+                break;
+            case R.id.start_byte_buffer_gain_button:
+                gain = 2.0f;
                 createByteBufferThread().start();
                 break;
             case R.id.start_short_buffer_button:
+                gain = 1.0f;
                 createShortBufferThread().start();
                 break;
             case R.id.start_short_buffer_gain1_button:
@@ -148,48 +171,36 @@ public class MainActivity extends AppCompatActivity {
             audioRecord.startRecording();
             audioTrack.play();
 
-            short[] buffer = new short[bufferSize];
+            byte[] byteBuffer = new byte[bufferSize];
+            short[] buffer;
             while (isRecording) {
-                int readSize = audioRecord.read(buffer, 0,
-                        buffer.length);
 
-                int byteIndex = 0;
-                int byteIndex2 = 0;
+                int readSize = audioRecord.read(byteBuffer, 0,
+                        byteBuffer.length);
 
-                for (int frameIndex = 0; frameIndex < readSize; frameIndex++) {
+                Log.i(TAG, "Size read: " + readSize);
+                buffer = byteArray2ShortArray(byteBuffer);
 
-                    for (int c = 0; c < 1; c++) {
+                for (int frameIndex = 0; frameIndex < buffer.length; frameIndex++) {
+                    if (gain != 1) {
 
-                        if (gain != 1) {
+                        double sample = ((double) buffer[frameIndex] / Double.MAX_VALUE);
+                        sample *= gain;
+                        int intValue = (int) (sample * Double.MAX_VALUE);
 
-                            long accumulator = 0;
-                            for (int b = 0; b < BYTES_PER_SAMPLE; b++) {
-                                accumulator += ((long) (buffer[byteIndex++] & 0xff)) << (b * 8 + EMPTY_SPACE);
-                            }
-
-                            double sample = ((double) accumulator / (double) Long.MAX_VALUE);
-                            sample *= gain;
-                            int intValue = (int) (sample * (double) Integer.MAX_VALUE);
-
-                            for (int i = 0; i < BYTES_PER_SAMPLE; i++) {
-                                buffer[i + byteIndex2] = (byte) (intValue >>> ((i + 2) * 8) & 0xff);
-                            }
-                            byteIndex2 += BYTES_PER_SAMPLE;
-
+                        if (intValue > 32765) {
+                            intValue = 32765;
                         }
+
+                        if (intValue < -32767) {
+                            intValue = -32767;
+                        }
+
+                        buffer[frameIndex] = (short) intValue;
                     }
-
-                    if (buffer[frameIndex] > 32765) {
-                        buffer[frameIndex] = 32767;
-
-                    } else if (buffer[frameIndex] < -32767) {
-                        buffer[frameIndex] = -32767;
-                    }
-
-
                 }
 
-                audioTrack.write(buffer, 0, buffer.length);
+                audioTrack.write(shortArray2ByteArray(buffer), 0, buffer.length * 2);
             }
 
         } else {
@@ -204,6 +215,27 @@ public class MainActivity extends AppCompatActivity {
         startShortBufferButton.setEnabled(!isRecording);
         startShortBufferGain1Button.setEnabled(!isRecording);
         startShortBufferGain2Button.setEnabled(!isRecording);
+    }
+
+    private byte[] shortArray2ByteArray(short[] shortArray) {
+        byte[] byteArray = new byte[shortArray.length * 2];
+        byte[] tempBuffer;
+        for (int i = 0; i < shortArray.length; i++) {
+            tempBuffer = short2Byte(shortArray[i]);
+            byteArray[i * 2] = tempBuffer[0];
+            byteArray[(i * 2) + 1] = tempBuffer[1];
+        }
+
+        return byteArray;
+    }
+
+    private short[] byteArray2ShortArray(byte[] byteArray) {
+        short[] shortArray = new short[byteArray.length / 2];
+        for (int i = 0; i < byteArray.length / 2; i++) {
+            shortArray[i] = byte2Short(byteArray[i * 2], byteArray[(i * 2) + 1]);
+        }
+
+        return shortArray;
     }
 
     private short byte2Short(byte b1, byte b2) {
@@ -227,5 +259,34 @@ public class MainActivity extends AppCompatActivity {
         audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, RATE, OUT_CHANNEL, ENCODING, recordBufferSize, AudioTrack.MODE_STREAM);
 
         return recordBufferSize;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        releaseAudioResources();
+    }
+
+    private void releaseAudioResources() {
+
+        if (audioRecord != null && audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
+            audioRecord.release();
+        }
+
+        if (audioTrack != null && audioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
+            audioTrack.release();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        releaseAudioResources();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        releaseAudioResources();
     }
 }
