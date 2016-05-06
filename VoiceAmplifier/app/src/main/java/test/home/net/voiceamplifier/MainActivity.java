@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
                 createByteBufferThread().start();
                 break;
             case R.id.start_byte_buffer_gain_button:
-                gain = 2.0f;
+                gain = 3.0f;
                 createByteBufferThread().start();
                 break;
             case R.id.start_short_buffer_button:
@@ -208,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
     private void setButtonsEnabled(boolean isRecording) {
         stopButton.setEnabled(isRecording);
         startByteBufferButton.setEnabled(!isRecording);
+        startByteBufferGainButton.setEnabled(!isRecording);
         startShortBufferButton.setEnabled(!isRecording);
         startShortBufferGain1Button.setEnabled(!isRecording);
         startShortBufferGain2Button.setEnabled(!isRecording);
