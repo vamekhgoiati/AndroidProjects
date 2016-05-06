@@ -9,44 +9,27 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="test.home.net.voiceamplifier.MainActivity">
 
+    <SeekBar
+        android:id="@+id/gain_seek_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginTop="5dp" />
+
     <Button
         android:id="@+id/start_byte_buffer_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/start_byte_buffer_button_text" />
-
-    <Button
-        android:id="@+id/start_byte_buffer_gain_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/start_byte_buffer_button"
-        android:text="@string/start_byte_buffer_gain_button_text" />
-
-    <Button
-        android:id="@+id/start_short_buffer_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/start_byte_buffer_gain_button"
-        android:text="@string/start_short_buffer_button_text" />
-
-    <Button
-        android:id="@+id/start_short_buffer_gain1_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/start_short_buffer_button"
-        android:text="@string/start_short_buffer_gain1_button_text" />
-
-    <Button
-        android:id="@+id/start_short_buffer_gain2_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/start_short_buffer_gain1_button"
-        android:text="@string/start_short_buffer_gain2_button_text" />
+        android:layout_below="@id/gain_seek_bar"
+        android:drawableLeft="@android:drawable/ic_btn_speak_now"
+        android:text="@string/start_button_text" />
 
     <Button
         android:id="@+id/stop_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/start_short_buffer_gain2_button"
+        android:layout_below="@id/start_byte_buffer_button"
+        android:drawableLeft="@android:drawable/ic_delete"
         android:text="@string/stop_button_text" />
+
 </RelativeLayout>
