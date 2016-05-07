@@ -21,8 +21,10 @@ public class MainActivity extends AppCompatActivity {
     private static final int OUT_CHANNEL = AudioFormat.CHANNEL_OUT_MONO;
     private static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
-    // values from [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
-    //               0    1    2    3    4    5    6
+    /*
+        values from [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+        position      0    1    2    3    4    5    6
+     */
     private static final int SEEKBAR_MAX_VALUE = 6;
     private static final int SEEKBAR_START_POS = 2;
     private static final float SEEKBAR_STEP = .5f;
@@ -163,10 +165,12 @@ public class MainActivity extends AppCompatActivity {
     private int initAudioComponents() {
 
         int recordBufferSize = AudioRecord.getMinBufferSize(RATE, IN_CHANNEL, ENCODING);
-        Log.i(TAG, "Got min buffer size: " + recordBufferSize);
+        int trackBufferSize = AudioTrack.getMinBufferSize(RATE, OUT_CHANNEL, ENCODING);
+        Log.i(TAG, "Got record min buffer size: " + recordBufferSize);
+        Log.i(TAG, "Got track min buffer size: " + trackBufferSize);
 
         audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, RATE, IN_CHANNEL, ENCODING, recordBufferSize);
-        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, RATE, OUT_CHANNEL, ENCODING, recordBufferSize, AudioTrack.MODE_STREAM);
+        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, RATE, OUT_CHANNEL, ENCODING, trackBufferSize, AudioTrack.MODE_STREAM);
 
         return recordBufferSize;
 
@@ -180,10 +184,12 @@ public class MainActivity extends AppCompatActivity {
 
         if (audioRecord != null && audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
             audioRecord.release();
+            audioRecord = null;
         }
 
         if (audioTrack != null && audioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
             audioTrack.release();
+            audioTrack = null;
         }
 
     }
